@@ -13,7 +13,7 @@
 
 (publish-directory
  :prefix "/"
- :destination (make-pathname :directory (append cl-user::*build-dir* (append '("public")))))
+ :destination (namestring (make-pathname :directory (append cl-user::*build-dir* (append '("public"))))))
 		   
 
 

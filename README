@@ -1,0 +1,10 @@
+This project is an example of how to use the Heroku Common Lisp Buildpack, https://github.com/mtravers/heroku-buildpack-cl
+
+Instructions:
+> Have a Heroku account and Heroku command line set up
+> Fork this
+> heroku create -s cedar --buildpack http://github.com/mtravers/heroku-buildpack-cl.git
+> git push heroku
+
+That's it!  And of course, modify accordingly.
+

@@ -4,7 +4,7 @@ Instructions:
 > Have a Heroku account and Heroku command line set up
 > Fork this
 > heroku create -s cedar --buildpack http://github.com/mtravers/heroku-buildpack-cl.git
-> git push heroku
+> git push heroku master
 
 That's it!  And of course, modify accordingly.
 

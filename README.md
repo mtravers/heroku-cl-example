@@ -1,14 +1,18 @@
-# This project is an example of how to use the [Heroku Common Lisp Buildpack](https://github.com/mtravers/heroku-buildpack-cl)
+# Common Lisp on Heroku -- Example Project
 
-## Instructions
-* Have a Heroku account and Heroku command line set up
-* Fork this
-* heroku create -s cedar --buildpack http://github.com/mtravers/heroku-buildpack-cl.git
-* git push heroku master
+This project is an example of how to use the [Heroku Common Lisp Buildpack](https://github.com/mtravers/heroku-buildpack-cl).  See the buildpack repository for more information and credits.
 
-That's it!  And of course, modify to taste.
+## Instructions:
+* Get yourself set up with a [Heroku account and tools](http://devcenter.heroku.com/articles/quickstart).
+* Fork this project and modify it with your own content.
+* Create your own Heroku application using CL Buildpack:
+    heroku create -s cedar --buildpack http://github.com/mtravers/heroku-buildpack-cl.git
+* Deploy:
+    git push heroku
 
-## More details
+That's it!
 
-* The file heroku-setup.lisp gets loaded at compile time, and needs to load any Lisp files or packages required.  It can also move 
+## More details:
+
+* The file heroku-setup.lisp gets loaded at compile time, and needs to load any Lisp files or packages required.  
 

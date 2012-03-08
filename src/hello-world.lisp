@@ -13,8 +13,7 @@
 
 (publish-directory
  :prefix "/"
-; :destination (namestring (make-pathname :directory (append cl-user::*build-dir* (append '("public")))))
- :destination "/app/public/"		;apparently this is where the app really lives, not *build-dir*?
+ :destination "./public/"
  )
 
 		   

@@ -11,10 +11,12 @@
 			    ((:img :src "lisp-glossy.jpg"))
 			    )))))
 
-(publish-directory
- :prefix "/"
- :destination "./public/"
- )
+(defun cl-user::initialize-application ()
+  ;; This has to be done at app-init rather than app-build time, to point to right directory.
+  (publish-directory
+   :prefix "/"
+   :destination "./public/"))
+
 
 		   
 

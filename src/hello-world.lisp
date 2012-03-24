@@ -5,7 +5,7 @@
 		       (with-http-response (req ent)
 			 (with-http-body (req ent)
 			   (html
-			    (:h1 "Hello World")
+			    (:h1 "(Hello 'World)")
 			    (:princ "Congratulations, you are running Lisp on Heroku!!!")
 			    :p
 			    ((:img :src "lisp-glossy.jpg"))

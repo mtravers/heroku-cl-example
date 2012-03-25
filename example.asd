@@ -9,6 +9,7 @@
      (:module :src
 	      :serial t      
 	      :components
-	      ((:file "hello-world"))
+	      ((:file "hello-world")
+	       (:file "db-test"))
 	      )))
 

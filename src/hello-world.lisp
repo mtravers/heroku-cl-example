@@ -15,7 +15,7 @@
   ;; This has to be done at app-init rather than app-build time, to point to right directory.
   (publish-directory
    :prefix "/"
-   :destination "./public/"))
+   :destination (print (truename "./public/"))))
 
 
 		   

@@ -13,9 +13,10 @@
 
 (defun cl-user::initialize-application ()
   ;; This has to be done at app-init rather than app-build time, to point to right directory.
+  ;; Sometimes the static files just don't show up -- no idea why, sigh
   (publish-directory
    :prefix "/"
-   :destination (print (namestring (truename "./public/")))))
+   :destination (namestring (truename "./public/"))))
 
 
 		   

@@ -11,6 +11,8 @@ Next, create your own Heroku application using CL Buildpack:
 
     heroku create -s cedar --buildpack http://github.com/mtravers/heroku-buildpack-cl.git
 
+    git push heroku master
+
 And deploy:
 
     git push heroku

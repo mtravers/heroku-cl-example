@@ -8,8 +8,10 @@
 			     (:h1 "DB test")
 			     (html-lines-out
 			      (with-output-to-string (s)
+				(if (on-heroku?)
+				    (setup-heroku-db)
+				    (setup-local-test-db ))
 				(db-test s))))))))
-
 
 (publish :path "/db-demo"
 	 :function #'(lambda (req ent)
@@ -32,11 +34,6 @@
     (html (:princ-safe line)
 	  :br)))
 
-(defvar *tutorial-database-type* :postgresql)
-(defvar *tutorial-database-name* "clsql-test")
-(defvar *tutorial-database-user* "travers")
-(defvar *tutorial-database-server* "localhost")
-(defvar *tutorial-database-password* "beandip")
 
 (defmacro successively ((stream) &body body)
   `(progn
@@ -48,14 +45,36 @@
 				 (format ,stream "~%<< ~A" (car result))))))
 	       body)))
 
+;;; Not necessarily the best test, presumably won't work on apps with db not installed
+(defun on-heroku? ()
+  (ccl:getenv "DATABASE_URL"))
+
+;;; Courtesy of jaeschliman
+(defun parse-heroku-db (string)
+  "parse the heroku db url"
+    (let* ((s (subseq string 11))
+	   (colon (position #\: s))
+	   (at (position #\@ s))
+	   (slash (position #\/ s :from-end t)))
+      (let ((user (subseq s 0 colon))
+	    (pass (subseq s (1+ colon) at))
+	    (server (subseq s (1+ at) slash))
+	    (database (subseq s (1+ slash))))
+	(list server database user pass))))
+
+(defvar *db-spec*)
+(defvar *local-db-password*)		;set by hand
+
+(defun setup-heroku-db ()
+  (setq *db-spec* (parse-heroku-db (ccl:getenv "DATABASE_URL"))))
+
+(defun setup-local-test-db ()
+  (setq *db-spec*
+	`("localhost" "clsql-test" "travers" ,*local-db-password*)))
+
 (defun db-test (stream)
   (successively (stream)
-    (clsql:connect 
-     `(,*tutorial-database-server*
-       ,*tutorial-database-name*
-       ,*tutorial-database-user*
-       ,*tutorial-database-password*)
-     :database-type *tutorial-database-type*)
+    (clsql:connect *db-spec* :database-type :postgresql)
     (clsql:start-sql-recording)
     (ignore-errors
       (clsql:drop-view-from-class 'employee)

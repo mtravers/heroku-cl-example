@@ -3,7 +3,7 @@
 (defsystem :example
     :name "example"
     :description "Example cl-heroku application"
-    :depends-on (:aserve :clsql)
+    :depends-on (:aserve :clsql :clsql-postgresql)
     :components
     ((:static-file "example.asd")
      (:module :src

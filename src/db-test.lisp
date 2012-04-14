@@ -5,17 +5,32 @@
 		       (with-http-response (req ent)
 			 (with-http-body (req ent)
 			   (html
-			    (:h1 "DB test")
-			    (html-lines-out
-			     (with-output-to-string (s)
-			       (db-test s))))))))
+			     (:h1 "DB test")
+			     (html-lines-out
+			      (with-output-to-string (s)
+				(db-test s))))))))
+
+
+(publish :path "/db-demo"
+	 :function #'(lambda (req ent)
+		       (with-http-response (req ent)
+			 (with-http-body (req ent)
+			   (html
+			     (:h1 "DB demo")
+			     (:table
+			      (dolist (elt (clsql:select 'net.aserve::employee))
+				(html
+				(:tr (:td (:princ (first-name (car elt))))
+				     (:td (:princ (last-name (car elt))))
+				     (:td (:princ (employee-email (car elt)))))))))))))
+
+
 
 
 (defun html-lines-out (string)
   (dolist (line (cl-ppcre:split "\\n" string))
     (html (:princ-safe line)
 	  :br)))
-    
 
 (defvar *tutorial-database-type* :postgresql)
 (defvar *tutorial-database-name* "clsql-test")
@@ -26,54 +41,51 @@
 (defmacro successively ((stream) &body body)
   `(progn
      ,@(mapcar #'(lambda (form)
-		 `(progn (format ,stream "~%>> ~A" ',form)
-			 (let ((result (multiple-value-list (ignore-errors ,form))))
-			   (if (typep (cadr result) 'error)
-			       (format ,stream "~%Error: ~A" (cadr result))
-			       (format ,stream "~%<< ~A" (car result))))))
+		   `(progn (format ,stream "~%>> ~A" ',form)
+			   (let ((result (multiple-value-list (ignore-errors ,form))))
+			     (if (typep (cadr result) 'error)
+				 (format ,stream "~%Error: ~A" (cadr result))
+				 (format ,stream "~%<< ~A" (car result))))))
 	       body)))
-
-		 
 
 (defun db-test (stream)
   (successively (stream)
-   (clsql:connect 
-    `(,*tutorial-database-server*
-      ,*tutorial-database-name*
-      ,*tutorial-database-user*
-      ,*tutorial-database-password*)
-    :database-type *tutorial-database-type*)
-   (clsql:start-sql-recording)
-   (ignore-errors
-     (clsql:drop-view-from-class 'employee)
-     (clsql:drop-view-from-class 'company))   
-   (clsql:create-view-from-class 'employee)
-   (clsql:create-view-from-class 'company)
-   (defvar company1 (make-instance 'company
-                              :companyid 1
-                              :name "Widgets Inc."
-                              ;; Lenin is president of Widgets Inc.
-                              :presidentid 1))
+    (clsql:connect 
+     `(,*tutorial-database-server*
+       ,*tutorial-database-name*
+       ,*tutorial-database-user*
+       ,*tutorial-database-password*)
+     :database-type *tutorial-database-type*)
+    (clsql:start-sql-recording)
+    (ignore-errors
+      (clsql:drop-view-from-class 'employee)
+      (clsql:drop-view-from-class 'company))   
+    (clsql:create-view-from-class 'employee)
+    (clsql:create-view-from-class 'company)
+    (defvar company1 (make-instance 'company
+		       :companyid 1
+		       :name "Widgets Inc."
+		       ;; Lenin is president of Widgets Inc.
+		       :presidentid 1))
 
-   (defvar employee1 (make-instance 'employee
-                               :emplid 1
-                               :first-name "Vladamir"
-                               :last-name "Lenin"
-                               :email "lenin@soviet.org"
-                               :companyid 1))
-(defvar employee2 (make-instance 'employee
-                               :emplid 2
-                               :first-name "Josef"
-                               :last-name "Stalin"
-                               :email "stalin@soviet.org"
-                               :companyid 1
-                               ;; Lenin manages Stalin (for now)
-                               :managerid 1))
+    (defvar employee1 (make-instance 'employee
+			:emplid 1
+			:first-name "Vladamir"
+			:last-name "Lenin"
+			:email "lenin@soviet.org"
+			:companyid 1))
+    (defvar employee2 (make-instance 'employee
+			:emplid 2
+			:first-name "Josef"
+			:last-name "Stalin"
+			:email "stalin@soviet.org"
+			:companyid 1
+			;; Lenin manages Stalin (for now)
+			:managerid 1))
 
-(clsql:update-records-from-instance employee1)
-(clsql:update-records-from-instance employee2)
-(clsql:update-records-from-instance company1)))
-
+    (clsql:update-records-from-instance employee1)
+    (clsql:update-records-from-instance employee2)
+    (clsql:update-records-from-instance company1)))
 
 (clsql:def-view-class employee ()
   ((emplid
@@ -142,3 +154,5 @@
                           :foreign-key companyid
                           :set t)))
   (:base-table company))
+
+

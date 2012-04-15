@@ -14,17 +14,45 @@
 				(db-test s))))))))
 
 (publish :path "/db-demo"
-	 :function #'(lambda (req ent)
-		       (with-http-response (req ent)
-			 (with-http-body (req ent)
-			   (html
-			     (:h1 "DB demo")
-			     (:table
-			      (dolist (elt (clsql:select 'net.aserve::employee))
-				(html
-				(:tr (:td (:princ (first-name (car elt))))
-				     (:td (:princ (last-name (car elt))))
-				     (:td (:princ (employee-email (car elt)))))))))))))
+	 :function
+	 #'(lambda (req ent)
+	     (with-http-response (req ent)
+	       (with-http-body (req ent)
+		 (labels ((render-table ()
+			    (html
+			      ((:form :id "table"
+				      :method "POST"
+				      :onsubmit (wu:remote-function
+						 (wu:ajax-continuation (:args (first last email))
+						   (let ((new (make-instance 'employee
+									     :emplid (incf *employee-counter*)
+									     :first-name first
+									     :last-name last
+									     :email email)))
+						     (clsql:update-records-from-instance new)
+						     (wu:render-update
+						       (:replace "table"
+								 (render-table)))))
+						 :form t))
+			       ((:table)
+				(dolist (elt (clsql:select 'net.aserve::employee :caching nil))
+				  (html
+				    (:tr (:td (:princ (first-name (car elt))))
+					 (:td (:princ (last-name (car elt))))
+					 (:td (:princ (employee-email (car elt)))))))
+				(:tr
+				 (:td ((:input :name "first")))
+				 (:td ((:input :name "last")))
+				 (:td ((:input :name "email")))
+				 (:td ((:input :type "submit" :value "Add"))))
+				)))))
+		   (html
+		     (:head
+		      (wu:javascript-includes "prototype.js"))
+		     (:body
+		      (:h1 "DB demo")
+		      (render-table))))))
+	     ))
 
 
 
@@ -106,10 +134,13 @@
     (clsql:update-records-from-instance employee2)
     (clsql:update-records-from-instance company1)))
 
+(defvar *employee-counter* 2)
+
 (clsql:def-view-class employee ()
   ((emplid
     :db-kind :key
     :db-constraints :not-null
+    :auto-increment t			;would be nice...
     :type integer
     :initarg :emplid)
    (first-name

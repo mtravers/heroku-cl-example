@@ -1,5 +1,6 @@
 (in-package :cl-user)
-;;; local load for debug
+;;; local load for debug.
+;;; Note: you have to be cd'd to the toplevel app directory for things to work.
 
 (defvar *build-dir* (pathname-directory *load-pathname*))
 

@@ -6,6 +6,4 @@
 
 (ql:quickload :example)
 
-;;; Redefine / extend heroku-toplevel here if necessary.
-
 (print ">>> Done building system")

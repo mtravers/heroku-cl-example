@@ -26,11 +26,10 @@
   ;; This has to be done at app-init rather than app-build time, to point to right directory.
   (publish-directory
    :prefix "/"
-;;; works but ugly
-   :destination (namestring (truename "./public/"))
-;;; does not work, run dir is different.
-;   :destination (namestring (make-pathname :directory (append cl-user::*build-dir* '("public"))))
-   ))
+   :destination (namestring (truename "./public/")))
+  (wu:locate-public-directory "./wupub/") 
+  (setf *developer-mode* (equal (ccl:getenv "DEVELOPER_MODE") "Y")))
+
 
 
 

@@ -12,6 +12,6 @@
 	      :serial t      
 	      :components
 	      ((:file "hello-world")
-	       (:file "db-test"))
+	       (:file "db"))
 	      )))
 

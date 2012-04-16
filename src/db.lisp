@@ -1,23 +1,11 @@
 (in-package :net.aserve)
 
-(publish :path "/db-test"
-	 :function #'(lambda (req ent)
-		       (with-http-response (req ent)
-			 (with-http-body (req ent)
-			   (html
-			     (:h1 "DB test")
-			     (html-lines-out
-			      (with-output-to-string (s)
-				(if (on-heroku?)
-				    (setup-heroku-db)
-				    (setup-local-test-db ))
-				(db-test s))))))))
-
 (publish :path "/db-demo"
 	 :function
 	 #'(lambda (req ent)
 	     (with-http-response (req ent)
 	       (with-http-body (req ent)
+		 (maybe-setup-db)
 		 (labels ((render-table ()
 			    (html
 			      ((:form :id "table"
@@ -35,12 +23,23 @@
 								 (render-table)))))
 						 :form t))
 			       ((:table)
+				(:tr (:th "First Name") (:th "Last Name") (:th "Email"))
 				(dolist (elt (clsql:select 'net.aserve::employee :caching nil))
+				  (let ((elt (car elt)))
 				  (html
-				    (:tr (:td (:princ (first-name (car elt))))
-					 (:td (:princ (last-name (car elt))))
-					 (:td (:princ (employee-email (car elt)))))))
+				    (:tr (:td (:princ (first-name elt)))
+					 (:td (:princ (last-name elt)))
+					 (:td (:princ (employee-email elt)))
+					 (:td (wu:link-to-remote 
+					       (wu:html-string ((:img :src "delete-icon.png" :border 0)))
+					       (wu:ajax-continuation ()
+						 (clsql:delete-instance-records elt)
+						 (wu:render-update
+						   (:replace "table"
+							     (render-table)))))
+					      )))))
 				(:tr
+
 				 (:td ((:input :name "first")))
 				 (:td ((:input :name "last")))
 				 (:td ((:input :name "email")))
@@ -48,7 +47,28 @@
 				)))))
 		   (html
 		     (:head
-		      (wu:javascript-includes "prototype.js"))
+		      (wu:javascript-includes "prototype.js")
+		      (wu:css-includes "wuwei.css")
+		      (:style "
+table {
+border: 1px solid gray;
+border-collapse: collapse;
+
+}
+
+th {
+border: 1px solid gray;
+background-color: #FFF5EE;
+}
+
+td {
+border: 1px solid gray;
+padding: 4px;
+}
+")
+
+
+		      )
 		     (:body
 		      (:h1 "DB demo")
 		      (render-table))))))
@@ -57,25 +77,6 @@
 
 
 
-(defun html-lines-out (string)
-  (dolist (line (cl-ppcre:split "\\n" string))
-    (html (:princ-safe line)
-	  :br)))
-
-
-(defmacro successively ((stream) &body body)
-  `(progn
-     ,@(mapcar #'(lambda (form)
-		   `(progn (format ,stream "~%>> ~A" ',form)
-			   (let ((result (multiple-value-list (ignore-errors ,form))))
-			     (if (typep (cadr result) 'error)
-				 (format ,stream "~%Error: ~A" (cadr result))
-				 (format ,stream "~%<< ~A" (car result))))))
-	       body)))
-
-;;; Not necessarily the best test, presumably won't work on apps with db not installed
-(defun on-heroku? ()
-  (ccl:getenv "DATABASE_URL"))
 
 ;;; Courtesy of jaeschliman
 (defun parse-heroku-db (string)
@@ -93,6 +94,12 @@
 (defvar *db-spec*)
 (defvar *local-db-password*)		;set by hand
 
+(defun maybe-setup-db ()
+  (unless (clsql:connected-databases)
+    (if (on-heroku?)
+	(setup-heroku-db)
+	(setup-local-test-db ))))
+
 (defun setup-heroku-db ()
   (setq *db-spec* (parse-heroku-db (ccl:getenv "DATABASE_URL"))))
 
@@ -100,39 +107,7 @@
   (setq *db-spec*
 	`("localhost" "clsql-test" "travers" ,*local-db-password*)))
 
-(defun db-test (stream)
-  (successively (stream)
-    (clsql:connect *db-spec* :database-type :postgresql)
-    (clsql:start-sql-recording)
-    (ignore-errors
-      (clsql:drop-view-from-class 'employee)
-      (clsql:drop-view-from-class 'company))   
-    (clsql:create-view-from-class 'employee)
-    (clsql:create-view-from-class 'company)
-    (defvar company1 (make-instance 'company
-		       :companyid 1
-		       :name "Widgets Inc."
-		       ;; Lenin is president of Widgets Inc.
-		       :presidentid 1))
 
-    (defvar employee1 (make-instance 'employee
-			:emplid 1
-			:first-name "Vladamir"
-			:last-name "Lenin"
-			:email "lenin@soviet.org"
-			:companyid 1))
-    (defvar employee2 (make-instance 'employee
-			:emplid 2
-			:first-name "Josef"
-			:last-name "Stalin"
-			:email "stalin@soviet.org"
-			:companyid 1
-			;; Lenin manages Stalin (for now)
-			:managerid 1))
-
-    (clsql:update-records-from-instance employee1)
-    (clsql:update-records-from-instance employee2)
-    (clsql:update-records-from-instance company1)))
 
 (defvar *employee-counter* 2)
 
@@ -206,3 +181,68 @@
   (:base-table company))
 
 
+;;; This URL inits and performs some tests on the DB, logging output
+(publish :path "/db-init"
+	 :function #'(lambda (req ent)
+		       (with-http-response (req ent)
+			 (with-http-body (req ent)
+			   (html
+			     (:h1 "DB init")
+			     (html-lines-out
+			      (with-output-to-string (s)
+				(maybe-setup-db)
+				(db-init s))))))))
+
+
+;;; Not necessarily the best test, presumably won't work on apps with db not installed
+(defun on-heroku? ()
+  (ccl:getenv "DATABASE_URL"))
+
+(defun html-lines-out (string)
+  (dolist (line (cl-ppcre:split "\\n" string))
+    (html (:princ-safe line)
+	  :br)))
+
+(defmacro successively ((stream) &body body)
+  `(progn
+     ,@(mapcar #'(lambda (form)
+		   `(progn (format ,stream "~%>> ~A" ',form)
+			   (let ((result (multiple-value-list (ignore-errors ,form))))
+			     (if (typep (cadr result) 'error)
+				 (format ,stream "~%Error: ~A" (cadr result))
+				 (format ,stream "~%<< ~A" (car result))))))
+	       body)))
+
+(defun db-init (stream)
+  (successively (stream)
+    (clsql:connect *db-spec* :database-type :postgresql)
+    (clsql:start-sql-recording)
+    (ignore-errors
+      (clsql:drop-view-from-class 'employee)
+      (clsql:drop-view-from-class 'company))   
+    (clsql:create-view-from-class 'employee)
+    (clsql:create-view-from-class 'company)
+    (defvar company1 (make-instance 'company
+		       :companyid 1
+		       :name "Widgets Inc."
+		       ;; Lenin is president of Widgets Inc.
+		       :presidentid 1))
+
+    (defvar employee1 (make-instance 'employee
+			:emplid 1
+			:first-name "Vladamir"
+			:last-name "Lenin"
+			:email "lenin@soviet.org"
+			:companyid 1))
+    (defvar employee2 (make-instance 'employee
+			:emplid 2
+			:first-name "Josef"
+			:last-name "Stalin"
+			:email "stalin@soviet.org"
+			:companyid 1
+			;; Lenin manages Stalin (for now)
+			:managerid 1))
+
+    (clsql:update-records-from-instance employee1)
+    (clsql:update-records-from-instance employee2)
+    (clsql:update-records-from-instance company1)))

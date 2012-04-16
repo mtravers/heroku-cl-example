@@ -6,12 +6,7 @@
 
 (ql:quickload :example)
 
-;;; Copy wuwei public files to build (+++ move this to wuwei to hide uglies)
-;;; Note: destination and initialize-application need to be in sync
-(asdf:run-shell-command
- (format nil "cp -r ~Apublic ~A"
-	 (namestring (asdf:component-pathname (asdf:find-system :wuwei)))
- 	 (namestring (make-pathname :directory (append *build-dir* '("wupub")))) 
-	 ))
+;;; Copy wuwei public files to build
+(wu:heroku-install-wupub-files)
 
 (print ">>> Done building system")

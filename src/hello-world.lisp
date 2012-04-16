@@ -27,8 +27,8 @@
   (publish-directory
    :prefix "/"
    :destination (namestring (truename "./public/")))
-  (wu:locate-public-directory "./wupub/") 
-  (setf *developer-mode* (equal (ccl:getenv "DEVELOPER_MODE") "Y")))
+  (wu:wuwei-initialize-application))
+
 
 
 

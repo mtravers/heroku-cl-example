@@ -13,7 +13,7 @@ Next, create your own Heroku application using CL Buildpack:
 
 And deploy:
 
-    git push heroku
+    git push heroku master
 
 That's it!
 
